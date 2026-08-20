@@ -35,3 +35,6 @@ tmp/
 Thumbs.db
 .idea/
 .vscode/
+
+# Local implementation worktrees
+.worktrees/
