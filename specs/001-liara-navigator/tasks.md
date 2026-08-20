@@ -18,16 +18,16 @@
 
 **Purpose**: Repository قابل Build با dependency lock، lint/typecheck و بدون Application behavior.
 
-- [ ] T001 ایجاد ساختار source مطابق plan در `backend/app/`, `backend/tests/`, `frontend/src/`, `frontend/tests/`, `knowledge/pipeline/`, `evals/`, و `tests/e2e/`
-- [ ] T002 ایجاد `backend/pyproject.toml` با Python 3.12، dependency groups مصوب و commandهای pytest/ruff/mypy
-- [ ] T003 ایجاد lockfile Python با `uv lock --project backend` و ثبت نسخه‌های resolve‌شده در `backend/uv.lock`
-- [ ] T004 [P] ایجاد `frontend/package.json`, `frontend/tsconfig.json`, `frontend/vite.config.ts` با React/Vite/Vitest/Testing Library/axe
-- [ ] T005 [P] ایجاد `frontend/package-lock.json` با `npm --prefix frontend install --package-lock-only`
-- [ ] T006 [P] ایجاد `.editorconfig`, `.gitignore`, `.dockerignore` با ممنوعیت `.env*`, `venv`, `node_modules`, raw crawl cache و test artifacts
-- [ ] T007 [P] ایجاد `.env.example` فقط با نام متغیرها و مقدارهای غیرSecret مطابق quickstart
-- [ ] T008 [P] ایجاد `compose.local.yaml` فقط برای PostgreSQL local با healthcheck و بدون expose credential production
-- [ ] T009 اجرای `uv run --project backend ruff check backend` و `npm --prefix frontend run typecheck` و رفع تمام خطاهای setup
-- [ ] T010 ثبت Checkpoint setup با `docker compose -f compose.local.yaml config` و بررسی اینکه هیچ Secret در فایل‌های stage‌شده وجود ندارد
+- [x] T001 ایجاد ساختار source مطابق plan در `backend/app/`, `backend/tests/`, `frontend/src/`, `frontend/tests/`, `knowledge/pipeline/`, `evals/`, و `tests/e2e/`
+- [x] T002 ایجاد `backend/pyproject.toml` با Python 3.12، dependency groups مصوب و commandهای pytest/ruff/mypy
+- [x] T003 ایجاد lockfile Python با `uv lock --project backend` و ثبت نسخه‌های resolve‌شده در `backend/uv.lock`
+- [x] T004 [P] ایجاد `frontend/package.json`, `frontend/tsconfig.json`, `frontend/vite.config.ts` با React/Vite/Vitest/Testing Library/axe
+- [x] T005 [P] ایجاد `frontend/package-lock.json` با `npm --prefix frontend install --package-lock-only`
+- [x] T006 [P] ایجاد `.editorconfig`, `.gitignore`, `.dockerignore` با ممنوعیت `.env*`, `venv`, `node_modules`, raw crawl cache و test artifacts
+- [x] T007 [P] ایجاد `.env.example` فقط با نام متغیرها و مقدارهای غیرSecret مطابق quickstart
+- [x] T008 [P] ایجاد `compose.local.yaml` فقط برای PostgreSQL local با healthcheck و بدون expose credential production
+- [x] T009 اجرای `uv run --project backend ruff check backend` و `npm --prefix frontend run typecheck` و رفع تمام خطاهای setup
+- [x] T010 ثبت Checkpoint setup با `docker compose -f compose.local.yaml config` و بررسی اینکه هیچ Secret در فایل‌های stage‌شده وجود ندارد
 
 **Checkpoint**: Dependency installation و static checks از صفر قابل‌بازتولید باشند.
 
