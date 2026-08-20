@@ -39,22 +39,22 @@
 
 ### Tests first
 
-- [ ] T011 [P] نوشتن test تنظیمات required/forbidden values در `backend/tests/unit/test_config.py`
-- [ ] T012 [P] نوشتن test mapping ErrorCode به ErrorResponse فاقد detail حساس در `backend/tests/unit/test_api_errors.py`
-- [ ] T013 [P] نوشتن test ساخت Anonymous Session، Cookie/CSRF، `Cache-Control: no-store` و عدم log شدن Authorization در `backend/tests/security/test_middleware.py`
-- [ ] T014 [P] نوشتن test bounded ThreadPool و non-blocking health request در `backend/tests/unit/test_executor.py`
-- [ ] T015 [P] نوشتن contract test اولیه OpenAPI paths/schema در `backend/tests/contract/test_openapi_contract.py`
-- [ ] T016 اجرای T011–T015 و ثبت Fail مورد انتظار به‌علت نبود runtime modules
+- [x] T011 [P] نوشتن test تنظیمات required/forbidden values در `backend/tests/unit/test_config.py`
+- [x] T012 [P] نوشتن test mapping ErrorCode به ErrorResponse فاقد detail حساس در `backend/tests/unit/test_api_errors.py`
+- [x] T013 [P] نوشتن test ساخت Anonymous Session، Cookie/CSRF، `Cache-Control: no-store` و عدم log شدن Authorization در `backend/tests/security/test_middleware.py`
+- [x] T014 [P] نوشتن test bounded ThreadPool و non-blocking health request در `backend/tests/unit/test_executor.py`
+- [x] T015 [P] نوشتن contract test اولیه OpenAPI paths/schema در `backend/tests/contract/test_openapi_contract.py`
+- [x] T016 اجرای T011–T015 و ثبت Fail مورد انتظار به‌علت نبود runtime modules
 
 ### Implementation
 
-- [ ] T017 [P] پیاده‌سازی Settings typed و startup validation در `backend/app/config.py`
-- [ ] T018 [P] تعریف enumهای Domain و Error taxonomy در `backend/app/domain/errors.py`, `backend/app/domain/routing.py`, `backend/app/domain/tools.py`
-- [ ] T019 [P] تعریف API request/response schemaهای مشترک با `extra='forbid'` در `backend/app/api/schemas.py`
-- [ ] T020 پیاده‌سازی امن error mapping در `backend/app/api/errors.py` با `request_id`, `retryable` و bounded message
-- [ ] T021 پیاده‌سازی request-id/cache/security-header middleware و content-free logger در `backend/app/api/middleware.py`
-- [ ] T022 پیاده‌سازی bounded executor dependency در `backend/app/api/dependencies.py` و shutdown hook
-- [ ] T023 ایجاد FastAPI factory، Anonymous Session Vault پایه، `POST /api/v1/sessions` و `/api/v1/health/live` در `backend/app/main.py`, `backend/app/domain/sessions.py`, `backend/app/security/session_vault.py`, `backend/app/api/routes/sessions.py`, `backend/app/api/routes/health.py`
+- [x] T017 [P] پیاده‌سازی Settings typed و startup validation در `backend/app/config.py`
+- [x] T018 [P] تعریف enumهای Domain و Error taxonomy در `backend/app/domain/errors.py`, `backend/app/domain/routing.py`, `backend/app/domain/tools.py`
+- [x] T019 [P] تعریف API request/response schemaهای مشترک با `extra='forbid'` در `backend/app/api/schemas.py`
+- [x] T020 پیاده‌سازی امن error mapping در `backend/app/api/errors.py` با `request_id`, `retryable` و bounded message
+- [x] T021 پیاده‌سازی request-id/cache/security-header middleware و content-free logger در `backend/app/api/middleware.py`
+- [x] T022 پیاده‌سازی bounded executor dependency در `backend/app/api/dependencies.py` و shutdown hook
+- [x] T023 ایجاد FastAPI factory، Anonymous Session Vault پایه، `POST /api/v1/sessions` و `/api/v1/health/live` در `backend/app/main.py`, `backend/app/domain/sessions.py`, `backend/app/security/session_vault.py`, `backend/app/api/routes/sessions.py`, `backend/app/api/routes/health.py`
 - [ ] T024 [P] ایجاد React shell، error boundary و RTL root در `frontend/src/app/App.tsx`, `frontend/src/main.tsx`, `frontend/src/styles/global.css`
 - [ ] T025 [P] انتقال tokenهای Design System به `frontend/src/styles/tokens.css` مطابق `docs/design-system/liara-intelligence-design-system.md`
 - [ ] T026 اجرای T011–T015 و frontend smoke test؛ همه باید PASS شوند

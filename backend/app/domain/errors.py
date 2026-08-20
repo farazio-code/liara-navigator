@@ -1,0 +1,35 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import StrEnum
+
+
+class ErrorCode(StrEnum):
+    AUTH_INVALID = "AUTH_INVALID"
+    AUTH_RATE_LIMITED = "AUTH_RATE_LIMITED"
+    SESSION_INVALID = "SESSION_INVALID"
+    CSRF_INVALID = "CSRF_INVALID"
+    LIARA_TIMEOUT = "LIARA_TIMEOUT"
+    LIARA_UNAVAILABLE = "LIARA_UNAVAILABLE"
+    POLICY_DENIED = "POLICY_DENIED"
+    RESOURCE_NOT_ALLOWED = "RESOURCE_NOT_ALLOWED"
+    AI_TIMEOUT = "AI_TIMEOUT"
+    AI_RATE_LIMITED = "AI_RATE_LIMITED"
+    AI_INVALID_OUTPUT = "AI_INVALID_OUTPUT"
+    RETRIEVAL_EMPTY = "RETRIEVAL_EMPTY"
+    CITATION_CORE_FAILED = "CITATION_CORE_FAILED"
+    SNAPSHOT_INCOMPATIBLE = "SNAPSHOT_INCOMPATIBLE"
+    IDEMPOTENCY_CONFLICT = "IDEMPOTENCY_CONFLICT"
+    VALIDATION_FAILED = "VALIDATION_FAILED"
+    REQUEST_NOT_FOUND = "REQUEST_NOT_FOUND"
+    SOURCE_NOT_FOUND = "SOURCE_NOT_FOUND"
+    INTERNAL_ERROR = "INTERNAL_ERROR"
+
+
+@dataclass(frozen=True, slots=True)
+class AppError(Exception):
+    code: ErrorCode
+    internal_detail: str | None = None
+
+    def __str__(self) -> str:
+        return self.code.value
