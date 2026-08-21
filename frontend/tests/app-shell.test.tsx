@@ -15,7 +15,7 @@ describe("application shell", () => {
     expect(screen.getByRole("navigation", { name: "ناوبری اصلی" })).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
     expect(screen.getByRole("complementary", { name: "منابع پاسخ" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "از سؤال تا پاسخ قابل‌استناد" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "مسئله را انتخاب کن؛ با شواهد حلش می‌کنیم." })).toBeInTheDocument();
   });
 
   it("loads the canonical dark Liara design tokens", () => {

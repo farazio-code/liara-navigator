@@ -83,6 +83,33 @@ async def test_paas_turn_fetches_logs_once_without_returning_raw_content() -> No
 
 
 @pytest.mark.asyncio
+async def test_paas_turn_without_service_uses_docs_and_does_not_fetch_logs() -> None:
+    provider = ContextCapturingProvider()
+    app = create_app(settings(), ai_provider=provider)
+    transport = httpx.ASGITransport(app=app)
+    async with (
+        app.router.lifespan_context(app),
+        httpx.AsyncClient(transport=transport, base_url="http://test") as client,
+    ):
+        session = await client.post("/api/v1/sessions")
+        response = await client.post(
+            "/api/v1/turns/stream",
+            headers={"X-CSRF-Token": session.json()["csrf_token"]},
+            json={
+                "client_request_id": "turn-paas-docs-only",
+                "topic": "paas",
+                "message": "برای رفع خطای اتصال دیتابیس برنامه چه مواردی را بررسی کنم؟",
+            },
+        )
+
+    assert response.status_code == 200
+    assert "event: agent.fetching_logs" not in response.text
+    assert "event: agent.sanitizing_logs" not in response.text
+    assert len(provider.contexts) == 1
+    assert all("<UNTRUSTED_SERVICE_LOGS>" not in item for item in provider.contexts[0])
+
+
+@pytest.mark.asyncio
 async def test_paas_turn_denies_a_service_reference_from_another_session() -> None:
     app = create_app(settings(), ai_provider=ContextCapturingProvider())
     transport = httpx.ASGITransport(app=app)

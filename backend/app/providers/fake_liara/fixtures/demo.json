@@ -1,9 +1,19 @@
 {
   "platforms": [
-    {"id": "django", "label": "Python / Django"},
-    {"id": "node", "label": "Node.js"},
+    {"id": "angular", "label": "Angular"},
+    {"id": "django", "label": "Django"},
+    {"id": "docker", "label": "Docker"},
     {"id": "dotnet", "label": ".NET"},
-    {"id": "docker", "label": "Docker"}
+    {"id": "flask", "label": "Flask"},
+    {"id": "go", "label": "Go"},
+    {"id": "laravel", "label": "Laravel"},
+    {"id": "nextjs", "label": "Next.js"},
+    {"id": "nodejs", "label": "Node.js"},
+    {"id": "php", "label": "PHP"},
+    {"id": "python", "label": "Python"},
+    {"id": "react", "label": "React"},
+    {"id": "static", "label": "Static"},
+    {"id": "vue", "label": "Vue"}
   ],
   "users": {
     "demo-user": {

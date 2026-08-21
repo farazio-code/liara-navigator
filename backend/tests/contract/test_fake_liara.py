@@ -33,9 +33,21 @@ async def test_lists_platforms_apps_services_and_bounded_logs() -> None:
 
         platforms = await client.get("/api/v1/fake-liara/platforms")
         assert platforms.status_code == 200
-        assert {item["id"] for item in platforms.json()["platforms"]} >= {
+        assert {item["id"] for item in platforms.json()["platforms"]} == {
+            "angular",
             "django",
+            "docker",
             "dotnet",
+            "flask",
+            "go",
+            "laravel",
+            "nextjs",
+            "nodejs",
+            "php",
+            "python",
+            "react",
+            "static",
+            "vue",
         }
 
         apps = await client.get("/api/v1/fake-liara/apps", params={"platform": "django"})

@@ -6,7 +6,22 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, ConfigDict
 
-PlatformId = Literal["django", "node", "dotnet", "docker"]
+PlatformId = Literal[
+    "angular",
+    "django",
+    "docker",
+    "dotnet",
+    "flask",
+    "go",
+    "laravel",
+    "nextjs",
+    "nodejs",
+    "php",
+    "python",
+    "react",
+    "static",
+    "vue",
+]
 
 
 class StrictModel(BaseModel):

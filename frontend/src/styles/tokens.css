@@ -3,6 +3,7 @@
   --lids-brand-mint: #87fcc4;
   --lids-brand-cyan: #28c1f5;
   --lids-brand-gradient: linear-gradient(92deg, #87fcc4 0%, #28c1f5 98.77%);
+  --lids-brand-gradient-soft: linear-gradient(92deg, #87fcc414 0%, #28c1f514 98.77%);
   --lids-bg-canvas: #f7f8f8;
   --lids-bg-subtle: #f1f3f2;
   --lids-surface-1: #ffffff;
@@ -15,6 +16,14 @@
   --lids-border-default: #00000014;
   --lids-border-strong: #00000024;
   --lids-focus-ring: #087a65;
+  --lids-on-brand: #111111;
+  --lids-success: #16a34a;
+  --lids-success-soft: #16a34a22;
+  --lids-success-text: #15803d;
+  --lids-danger: #dc2626;
+  --lids-danger-soft: #dc262622;
+  --lids-danger-text: #b91c1c;
+  --lids-unknown-soft: #7c6fe81f;
   --lids-radius-control: 8px;
   --lids-radius-card: 12px;
   --lids-radius-dialog: 16px;
@@ -33,4 +42,6 @@
   --lids-border-default: #ffffff14;
   --lids-border-strong: #ffffff24;
   --lids-focus-ring: #87fcc4;
+  --lids-success-text: #86efac;
+  --lids-danger-text: #fca5a5;
 }

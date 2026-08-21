@@ -12,7 +12,6 @@ from pydantic import Field
 
 from app.api.schemas import StrictModel
 from app.application.router import Topic
-from app.domain.errors import AppError, ErrorCode
 from app.security.log_sanitizer import sanitize_logs
 
 
@@ -50,9 +49,7 @@ async def stream_turn(
         )
         stream = _event("request.accepted", {"request_id": body.client_request_id})
         runtime_evidence = None
-        if body.topic == "paas":
-            if body.service_ref is None:
-                raise AppError(ErrorCode.VALIDATION_FAILED)
+        if body.topic == "paas" and body.service_ref is not None:
             service_id = request.app.state.session_vault.resolve_resource(
                 session_id, body.service_ref, kind="service"
             )

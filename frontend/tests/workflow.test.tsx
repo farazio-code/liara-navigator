@@ -34,7 +34,25 @@ describe("support and agentic workflow", () => {
       "true",
     );
     await user.click(screen.getByRole("tab", { name: "تیکت پشتیبانی" }));
-    expect(screen.getByRole("heading", { name: "ارسال تیکت برای تیم پشتیبانی" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "جزئیات مسئله را ثبت کنید" })).toBeVisible();
+  });
+
+  it("keeps PaaS chat available when the user has no service", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = String(input);
+      if (url.endsWith("/sessions")) {
+        return jsonResponse({ csrf_token: "x".repeat(32) }, 201);
+      }
+      if (url.endsWith("/platforms")) return jsonResponse({ platforms: [] });
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "PaaS" }));
+
+    expect(screen.getByText("انتخاب سرویس اختیاری است")).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "شرح مسئله" })).toBeEnabled();
   });
 
   it("loads dependent PaaS app and service choices", async () => {
@@ -70,8 +88,7 @@ describe("support and agentic workflow", () => {
     render(<App />);
 
     await user.click(screen.getByRole("radio", { name: "PaaS" }));
-    const platform = await screen.findByRole("combobox", { name: "نوع پلتفرم" });
-    await user.selectOptions(platform, "django");
+    await user.click(await screen.findByRole("radio", { name: /Django/ }));
     await user.click(await screen.findByRole("button", { name: /فروشگاه/ }));
     await user.click(await screen.findByRole("button", { name: /web/ }));
 

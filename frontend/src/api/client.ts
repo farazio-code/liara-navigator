@@ -1,6 +1,21 @@
 import { parseTerminalEvent, type TerminalResult } from "./events";
 
-export type Platform = { id: "django" | "node" | "dotnet" | "docker"; label: string };
+export type PlatformId =
+  | "angular"
+  | "django"
+  | "docker"
+  | "dotnet"
+  | "flask"
+  | "go"
+  | "laravel"
+  | "nextjs"
+  | "nodejs"
+  | "php"
+  | "python"
+  | "react"
+  | "static"
+  | "vue";
+export type Platform = { id: PlatformId; label: string };
 export type AppSummary = {
   ref: string;
   name: string;

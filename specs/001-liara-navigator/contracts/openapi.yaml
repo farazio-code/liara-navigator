@@ -115,7 +115,7 @@ components:
   schemas:
     Platform:
       type: string
-      enum: [django, node, dotnet, docker]
+      enum: [angular, django, docker, dotnet, flask, go, laravel, nextjs, nodejs, php, python, react, static, vue]
     Topic:
       type: string
       enum: [paas, cdn, ssl, dns, other]
