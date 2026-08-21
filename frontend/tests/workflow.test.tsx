@@ -76,6 +76,7 @@ describe("support and agentic workflow", () => {
     await user.click(await screen.findByRole("button", { name: /web/ }));
 
     expect(screen.getByText("سرویس انتخاب‌شده: web")).toBeVisible();
+    expect(screen.getByText(/حداکثر ۱۰۰ خط آخر لاگ/)).toBeVisible();
     expect(screen.getByRole("textbox", { name: "شرح مسئله" })).toBeEnabled();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
   });

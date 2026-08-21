@@ -17,9 +17,9 @@ body {
   line-height: 1.85;
 }
 
-button, select, textarea { font: inherit; }
+button, input, select, textarea { font: inherit; }
 
-button, select, textarea {
+button, input, select, textarea {
   color: var(--lids-text-primary);
   background: var(--lids-surface-2);
   border: 1px solid var(--lids-border-default);
@@ -85,6 +85,7 @@ h1 { margin: 4px 0 6px; font-size: 28px; line-height: 1.5; }
 .field { display: grid; gap: 7px; }
 .field label, .field-label { font-size: 14px; font-weight: 600; }
 .field select { min-height: 44px; padding-inline: 12px; }
+.field input { min-height: 44px; padding-inline: 12px; }
 .resource-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .resource-card { display: grid; text-align: right; padding: 12px 14px; background: var(--lids-surface-2); }
 .resource-card.selected { border-color: var(--lids-brand-mint); box-shadow: inset -2px 0 var(--lids-brand-mint); }
@@ -96,7 +97,19 @@ h1 { margin: 4px 0 6px; font-size: 28px; line-height: 1.5; }
 .composer { display: grid; gap: 8px; margin-block-start: 24px; }
 .composer textarea { min-height: 120px; resize: vertical; padding: 12px; }
 .selection-note { color: var(--lids-brand-mint); margin: 0; }
+.log-use-note { margin: 0; color: var(--lids-text-secondary); font-size: 13px; }
 .primary { min-height: 48px; padding-inline: 24px; color: #111; border: 0; background: var(--lids-brand-gradient); font-weight: 700; justify-self: start; }
+
+.agent-result { margin-block-start: 24px; padding: 18px; border: 1px solid var(--lids-border-default); border-radius: 12px; background: var(--lids-surface-2); }
+.agent-result.unknown, .agent-result.clarification { border-color: #7c6fe866; }
+.claim p { font-size: 16px; line-height: 1.9; }
+.claim a, .source-link { color: var(--lids-brand-cyan); }
+.claim blockquote { margin: 12px 0 0; padding: 10px 12px; border-inline-start: 2px solid var(--lids-brand-mint); color: var(--lids-text-secondary); font-size: 13px; }
+.source-link { display: block; padding-block: 7px; }
+.ticket-form { display: grid; gap: 16px; }
+.ticket-form textarea { min-height: 150px; padding: 12px; }
+.handoff-preview, .ticket-success { padding: 14px; border: 1px solid var(--lids-border-default); border-radius: 8px; background: var(--lids-surface-2); }
+.ticket-success { display: grid; gap: 6px; border-color: #16a34a66; }
 
 .evidence-title { margin: 0 0 8px; font-size: 16px; }
 .evidence-copy { color: var(--lids-text-secondary); }

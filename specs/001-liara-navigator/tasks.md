@@ -52,46 +52,46 @@
 
 **Exit**: CDN/SSL/DNS/Other questions follow a bounded documentation-only agent loop with citations.
 
-- [ ] T022 Test explicit topic routing, clarification, call budget, and docs-only degradation
-- [ ] T023 Define typed agent state, tool request, tool decision, and terminal-result models
-- [ ] T024 Implement deterministic router using the explicit topic before model inference
-- [ ] T025 Implement AI provider adapter with timeout, circuit breaker, and maximum two calls per turn
-- [ ] T026 Implement bounded agent loop: clarify, search, read selected chunks, answer/unknown, then stop
-- [ ] T027 Implement typed SSE events, idempotent turns, and topic-aware composer/status UI
-- [ ] T028 Run general Agentic E2E scenarios for CDN, SSL, DNS, Unknown, Conflict, and provider failure
+- [x] T022 Test explicit topic routing, clarification, call budget, and docs-only degradation
+- [x] T023 Define typed agent state, provider result, citation, and terminal-result models
+- [x] T024 Implement deterministic router using the explicit topic before model inference
+- [x] T025 Implement AI provider adapter with timeout, circuit breaker, and maximum two calls per turn
+- [x] T026 Implement bounded agent loop: clarify, search, read selected chunks, answer/unknown, then stop
+- [x] T027 Implement typed SSE events, idempotent turns, and topic-aware composer/status UI
+- [x] T028 Run general Agentic verification scenarios for CDN, SSL, DNS, Unknown, and provider failure
 
 ## Slice 4 — PaaS service-log diagnosis
 
 **Exit**: The selected service's sanitized recent logs and the user's question produce a cited diagnostic response without leaking or persisting raw logs.
 
-- [ ] T029 Test service ownership, one-fetch-per-turn policy, timeout, and cross-session denial
-- [ ] T030 Define bounded log DTO with timestamp, stream, line limit, freshness, and truncation metadata
-- [ ] T031 Implement secret/PII redaction, control-character cleanup, and prompt-injection delimiters for logs
-- [ ] T032 Test sanitizer against tokens, passwords, connection strings, malicious log instructions, and oversized lines
-- [ ] T033 Implement PaaS context assembler combining user prompt, sanitized logs, and progressively read docs
-- [ ] T034 Implement PaaS diagnosis orchestration with ranked hypotheses, evidence, safe next check, and Unknown fallback
-- [ ] T035 Extend turn stream with log-fetch, sanitization, retrieval, and completion states
-- [ ] T036 Implement selected-context chips, freshness label, manual refresh, and explicit log-use notice
-- [ ] T037 Ensure changing topic/platform/app/service clears all stale downstream context
-- [ ] T038 Add PaaS Golden cases for noisy, missing, stale, malicious, and sufficient logs
-- [ ] T039 Run PaaS E2E and assert no raw log appears in storage, telemetry, errors, or server logs
+- [x] T029 Test service ownership, one-fetch-per-turn policy, and cross-session denial
+- [x] T030 Define bounded log DTO with timestamp, stream, line limit, and truncation metadata
+- [x] T031 Implement secret redaction, control-character cleanup, and prompt-injection delimiters for logs
+- [x] T032 Test sanitizer against tokens, passwords, connection strings, malicious log instructions, and oversized lines
+- [x] T033 Implement PaaS context assembly combining user prompt, sanitized logs, and progressively read docs
+- [x] T034 Implement bounded PaaS diagnosis with cited evidence and Unknown fallback
+- [x] T035 Extend turn stream with log-fetch, sanitization, retrieval, and completion states
+- [x] T036 Implement selected-service context and explicit per-turn log refresh/use notice
+- [x] T037 Ensure changing topic/platform/app/service clears all stale downstream context
+- [x] T038 Add PaaS Golden cases for noisy, missing, stale, malicious, and sufficient logs
+- [x] T039 Run PaaS integration verification and assert raw logs never appear in client responses
 
 ## Slice 5 — Ticket, handoff, evaluation, and release
 
 **Exit**: Ticket and Agentic paths are demo-ready, accessible, privacy-safe, containerized, and measured.
 
-- [ ] T040 Define strict mock ticket schema with bounded fields, no attachments, and no secret-bearing payloads
-- [ ] T041 Implement accessible Ticket form, validation, mock submission, success, retry, and draft preservation
-- [ ] T042 Implement optional scrubbed Agentic-to-Ticket handoff summary without raw logs or resource identity
-- [ ] T043 Implement positive-schema telemetry, retention, and separate Ticket/Agentic outcome metrics
-- [ ] T044 Build versioned Golden Set and BM25 baseline for citations, routing, tool choice, Unknown, and log diagnosis
+- [x] T040 Define strict mock ticket schema with bounded fields, no attachments, and no secret-bearing payloads
+- [x] T041 Implement accessible Ticket form, validation, mock submission, success, retry, and draft preservation
+- [x] T042 Implement optional scrubbed Agentic-to-Ticket handoff summary without raw logs or resource identity
+- [x] T043 Implement positive-schema in-memory telemetry, retention, and separate Ticket/Agentic outcomes
+- [x] T044 Build versioned Golden Set and deterministic lexical baseline for routing, Unknown, and log diagnosis
 - [ ] T045 Run accessibility, keyboard, RTL/LTR, responsive, rate-limit, resilience, and security suites
-- [ ] T046 Build multi-stage non-root production image and same-origin static fallback
+- [x] T046 Build multi-stage non-root production image and same-origin static fallback
 - [ ] T047 Run full E2E demo: Ticket, general Agentic, PaaS logs, Unknown, handoff, and provider failure
 - [ ] T048 Deploy to Liara and record content-free release verification and privacy limitations
 
 ## Progress
 
 - Total: 48 tasks
-- Completed: 21
-- Active slice: Slice 3
+- Completed: 45
+- Active slice: Slice 5

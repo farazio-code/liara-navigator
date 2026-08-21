@@ -6,10 +6,13 @@ import {
   listApps,
   listPlatforms,
   listServices,
+  submitTicket,
+  submitTurn,
   type AppSummary,
   type Platform,
   type ServiceSummary,
 } from "../api/client";
+import type { TerminalResult } from "../api/events";
 
 
 type Mode = "agent" | "ticket";
@@ -30,6 +33,7 @@ export function App() {
   const [mode, setMode] = useState<Mode>("agent");
   const [topic, setTopic] = useState<Topic | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
+  const [csrfToken, setCsrfToken] = useState("");
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [platform, setPlatform] = useState<Platform["id"] | "">("");
   const [apps, setApps] = useState<AppSummary[]>([]);
@@ -39,9 +43,23 @@ export function App() {
   const [platformState, setPlatformState] = useState<LoadState>("idle");
   const [appState, setAppState] = useState<LoadState>("idle");
   const [serviceState, setServiceState] = useState<LoadState>("idle");
+  const [problem, setProblem] = useState("");
+  const [turnState, setTurnState] = useState<LoadState>("idle");
+  const [result, setResult] = useState<TerminalResult | null>(null);
+  const [ticketTopic, setTicketTopic] = useState<Topic>("other");
+  const [ticketSubject, setTicketSubject] = useState("");
+  const [ticketDescription, setTicketDescription] = useState("");
+  const [handoffSummary, setHandoffSummary] = useState("");
+  const [ticketState, setTicketState] = useState<LoadState>("idle");
+  const [ticketRef, setTicketRef] = useState("");
 
   useEffect(() => {
-    void createSession().then(() => setSessionReady(true)).catch(() => setSessionReady(false));
+    void createSession()
+      .then((token) => {
+        setCsrfToken(token);
+        setSessionReady(true);
+      })
+      .catch(() => setSessionReady(false));
   }, []);
 
   useEffect(() => {
@@ -64,6 +82,8 @@ export function App() {
     setSelectedService(null);
     setAppState("idle");
     setServiceState("idle");
+    setResult(null);
+    setTurnState("idle");
   };
 
   const choosePlatform = async (nextPlatform: Platform["id"] | "") => {
@@ -101,6 +121,46 @@ export function App() {
     }
   };
 
+  const runAgent = async () => {
+    if (!topic || !csrfToken || !problem.trim()) return;
+    setTurnState("loading");
+    setResult(null);
+    try {
+      const terminal = await submitTurn(topic, problem.trim(), csrfToken, selectedService?.ref);
+      setResult(terminal);
+      setTurnState("ready");
+    } catch {
+      setTurnState("error");
+    }
+  };
+
+  const sendTicket = async () => {
+    if (!csrfToken) return;
+    setTicketState("loading");
+    try {
+      const response = await submitTicket({
+        topic: ticketTopic,
+        subject: ticketSubject.trim(),
+        description: ticketDescription.trim(),
+        handoffSummary: handoffSummary || undefined,
+      }, csrfToken);
+      setTicketRef(response.ticket_ref);
+      setTicketState("ready");
+    } catch {
+      setTicketState("error");
+    }
+  };
+
+  const handoffToTicket = () => {
+    if (!result) return;
+    const summary = result.claims.map((claim) => claim.text).join("\n").slice(0, 1500);
+    setTicketTopic(topic ?? "other");
+    setTicketSubject("ادامه بررسی توسط تیم پشتیبانی");
+    setTicketDescription("پاسخ دستیار مسئله را به‌طور کامل حل نکرد؛ لطفاً بررسی را ادامه دهید.");
+    setHandoffSummary(summary);
+    setMode("ticket");
+  };
+
   return (
     <div className="app-shell" dir="rtl" lang="fa">
       <a className="skip-link" href="#main-content">رفتن به محتوای اصلی</a>
@@ -128,7 +188,34 @@ export function App() {
         {mode === "ticket" ? (
           <section className="workflow">
             <h2 className="section-title">ارسال تیکت برای تیم پشتیبانی</h2>
-            <p className="status">در Slice پنجم، فرم امن تیکت در این بخش فعال می‌شود.</p>
+            {ticketState === "ready" ? (
+              <div className="ticket-success" role="status">
+                <strong>تیکت آزمایشی ثبت شد.</strong>
+                <span dir="ltr">{ticketRef}</span>
+                <p>در MVP این ثبت mock است و به سامانه واقعی پشتیبانی ارسال نشده است.</p>
+              </div>
+            ) : (
+              <form className="ticket-form" onSubmit={(event) => { event.preventDefault(); void sendTicket(); }}>
+                <div className="field">
+                  <label htmlFor="ticket-topic">موضوع</label>
+                  <select id="ticket-topic" value={ticketTopic} onChange={(event) => setTicketTopic(event.target.value as Topic)}>
+                    {topics.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="ticket-subject">عنوان تیکت</label>
+                  <input id="ticket-subject" value={ticketSubject} minLength={10} maxLength={120} required onChange={(event) => setTicketSubject(event.target.value)} />
+                </div>
+                <div className="field">
+                  <label htmlFor="ticket-description">شرح مسئله</label>
+                  <textarea id="ticket-description" value={ticketDescription} minLength={20} maxLength={2000} required onChange={(event) => setTicketDescription(event.target.value)} />
+                </div>
+                {handoffSummary && <div className="handoff-preview"><strong>خلاصه امن دستیار</strong><p>{handoffSummary}</p></div>}
+                <p className="privacy-note">Token، password، connection string و لاگ خام را در تیکت وارد نکنید.</p>
+                {ticketState === "error" && <p className="status error" role="alert">ثبت تیکت ناموفق بود؛ متن شما حفظ شده است.</p>}
+                <button className="primary" disabled={ticketState === "loading"}>{ticketState === "loading" ? "در حال ثبت…" : "ثبت تیکت آزمایشی"}</button>
+              </form>
+            )}
           </section>
         ) : (
           <section className="workflow">
@@ -198,19 +285,40 @@ export function App() {
               </div>
             ) : topic ? <p className="status">این موضوع با مستندات رسمی لیارا بررسی می‌شود.</p> : null}
 
-            <div className="composer">
+            <form className="composer" onSubmit={(event) => { event.preventDefault(); void runAgent(); }}>
               {selectedService && <p className="selection-note">سرویس انتخاب‌شده: {selectedService.name}</p>}
+              {selectedService && <p className="log-use-note">با هر بررسی، حداکثر ۱۰۰ خط آخر لاگ تازه دریافت، پاک‌سازی و فقط برای همین پاسخ استفاده می‌شود.</p>}
               <label htmlFor="problem">شرح مسئله</label>
-              <textarea id="problem" disabled={topic === "paas" && !selectedService} placeholder="خطا، رفتار مشاهده‌شده و نتیجه‌ای که انتظار داشتید را بنویسید." />
-              <button className="primary" disabled={!topic || (topic === "paas" && !selectedService)}>شروع بررسی</button>
-            </div>
+              <textarea id="problem" value={problem} onChange={(event) => setProblem(event.target.value)} disabled={topic === "paas" && !selectedService} placeholder="خطا، رفتار مشاهده‌شده و نتیجه‌ای که انتظار داشتید را بنویسید." />
+              <button className="primary" disabled={!topic || !problem.trim() || turnState === "loading" || (topic === "paas" && !selectedService)}>{turnState === "loading" ? "در حال بررسی…" : "شروع بررسی"}</button>
+              <div aria-live="polite">
+                {turnState === "error" && <p className="status error">ارتباط با دستیار ناموفق بود؛ متن شما حفظ شده است.</p>}
+              </div>
+            </form>
+
+            {result && (
+              <section className={`agent-result ${result.status}`} aria-label="پاسخ دستیار">
+                <h2 className="section-title">{result.status === "answer" ? "پاسخ مستند" : result.status === "clarification" ? "جزئیات بیشتری لازم است" : "پاسخ قطعی پیدا نشد"}</h2>
+                {result.message && <p>{result.message}</p>}
+                {result.claims.map((claim) => (
+                  <article className="claim" key={`${claim.citation.chunk_id}-${claim.text}`}>
+                    <p>{claim.text}</p>
+                    <a href={claim.citation.url} target="_blank" rel="noreferrer">[{claim.citation.title} — {claim.citation.heading}]</a>
+                    <blockquote>{claim.citation.evidence}</blockquote>
+                  </article>
+                ))}
+                <button className="retry" onClick={handoffToTicket}>ادامه با تیکت پشتیبانی</button>
+              </section>
+            )}
           </section>
         )}
       </main>
 
       <aside className="side-panel evidence-panel" aria-label="منابع پاسخ">
         <h2 className="evidence-title">زمینه و منابع</h2>
-        <p className="evidence-copy">Citationها و شواهد پاسخ در این بخش نمایش داده می‌شوند.</p>
+        {result?.claims.length ? result.claims.map((claim, index) => (
+          <a className="source-link" href={claim.citation.url} target="_blank" rel="noreferrer" key={claim.citation.chunk_id}>[{index + 1}] {claim.citation.title}</a>
+        )) : <p className="evidence-copy">Citationها و شواهد پاسخ در این بخش نمایش داده می‌شوند.</p>}
         <p className="privacy-note">لاگ فقط برای سرویس انتخاب‌شده و به‌شکل محدود دریافت می‌شود؛ داده خام ذخیره نخواهد شد.</p>
       </aside>
     </div>
