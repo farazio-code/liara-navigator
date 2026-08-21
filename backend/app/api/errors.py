@@ -18,7 +18,9 @@ class ErrorPolicy:
 
 ERROR_POLICIES: Final[dict[ErrorCode, ErrorPolicy]] = {
     ErrorCode.AUTH_INVALID: ErrorPolicy(401, "توکن لیارا معتبر نیست.", False),
-    ErrorCode.AUTH_RATE_LIMITED: ErrorPolicy(429, "تعداد تلاش‌ها بیش از حد مجاز است.", True),
+    ErrorCode.AUTH_RATE_LIMITED: ErrorPolicy(
+        429, "تعداد تلاش‌ها بیش از حد مجاز است.", True  # noqa: RUF001
+    ),
     ErrorCode.SESSION_INVALID: ErrorPolicy(401, "نشست معتبر نیست یا منقضی شده است.", False),
     ErrorCode.CSRF_INVALID: ErrorPolicy(403, "اعتبار درخواست تأیید نشد.", False),
     ErrorCode.LIARA_TIMEOUT: ErrorPolicy(502, "پاسخ لیارا بیش از حد طول کشید.", True),
@@ -31,7 +33,9 @@ ERROR_POLICIES: Final[dict[ErrorCode, ErrorPolicy]] = {
     ErrorCode.RETRIEVAL_EMPTY: ErrorPolicy(404, "منبع رسمی مرتبطی پیدا نشد.", False),
     ErrorCode.CITATION_CORE_FAILED: ErrorPolicy(422, "پاسخ قطعی در منابع رسمی پیدا نشد.", False),
     ErrorCode.SNAPSHOT_INCOMPATIBLE: ErrorPolicy(503, "پایگاه دانش آماده نیست.", False),
-    ErrorCode.IDEMPOTENCY_CONFLICT: ErrorPolicy(409, "شناسه درخواست با محتوای دیگری استفاده شده است.", False),
+    ErrorCode.IDEMPOTENCY_CONFLICT: ErrorPolicy(
+        409, "شناسه درخواست با محتوای دیگری استفاده شده است.", False
+    ),
     ErrorCode.VALIDATION_FAILED: ErrorPolicy(422, "دادهٔ درخواست معتبر نیست.", False),
     ErrorCode.REQUEST_NOT_FOUND: ErrorPolicy(404, "درخواست موردنظر پیدا نشد.", False),
     ErrorCode.SOURCE_NOT_FOUND: ErrorPolicy(404, "منبع موردنظر پیدا نشد.", False),

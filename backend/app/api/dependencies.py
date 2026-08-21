@@ -6,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import TypeVar
 
-
 ResultT = TypeVar("ResultT")
 
 

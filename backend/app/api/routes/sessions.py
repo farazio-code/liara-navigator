@@ -2,7 +2,6 @@ from fastapi import APIRouter, Request, Response, status
 
 from app.api.schemas import CreateSessionResponse, ErrorResponse, SessionSummary
 
-
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
 

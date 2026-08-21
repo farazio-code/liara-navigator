@@ -4,7 +4,6 @@ import logging
 
 import httpx
 import pytest
-
 from app.config import Settings
 from app.main import create_app
 
@@ -23,9 +22,11 @@ def make_settings() -> Settings:
 async def test_anonymous_session_uses_secure_cookie_csrf_and_no_store() -> None:
     app = create_app(make_settings())
     transport = httpx.ASGITransport(app=app)
-    async with app.router.lifespan_context(app):
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-            response = await client.post("/api/v1/sessions")
+    async with (
+        app.router.lifespan_context(app),
+        httpx.AsyncClient(transport=transport, base_url="http://test") as client,
+    ):
+        response = await client.post("/api/v1/sessions")
 
     assert response.status_code == 201
     assert response.headers["cache-control"] == "no-store"

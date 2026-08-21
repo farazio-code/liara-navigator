@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from openapi_spec_validator import validate
-
 from app.config import Settings
 from app.main import create_app
+from openapi_spec_validator import validate
 
 
 def make_settings() -> Settings:

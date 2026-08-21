@@ -6,11 +6,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 
 from app.api.dependencies import BoundedExecutor
-from app.api.errors import error_response
+from app.api.errors import ErrorJSONResponse, error_response
 from app.api.middleware import SecurityMiddleware
-from app.api.routes import health, sessions
+from app.api.routes import fake_liara, health, sessions
 from app.config import Settings
 from app.domain.errors import AppError
+from app.providers.fake_liara.client import FakeLiaraClient
 from app.security.session_vault import MemorySessionVault
 
 
@@ -30,6 +31,7 @@ def create_app(
         application.state.session_vault = MemorySessionVault(
             hmac_secret=resolved_settings.SESSION_HMAC_SECRET.get_secret_value()
         )
+        application.state.fake_liara = FakeLiaraClient()
         try:
             yield
         finally:
@@ -43,10 +45,11 @@ def create_app(
     )
     application.add_middleware(SecurityMiddleware)
     application.include_router(sessions.router, prefix="/api/v1")
+    application.include_router(fake_liara.router, prefix="/api/v1")
     application.include_router(health.router, prefix="/api/v1")
 
     @application.exception_handler(AppError)
-    async def handle_app_error(request: Request, error: AppError):
+    async def handle_app_error(request: Request, error: AppError) -> ErrorJSONResponse:
         return error_response(error, request_id=request.state.request_id)
 
     return application

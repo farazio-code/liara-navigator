@@ -6,7 +6,6 @@ import time
 
 import httpx
 import pytest
-
 from app.api.dependencies import BoundedExecutor
 from app.config import Settings
 from app.main import create_app
