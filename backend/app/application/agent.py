@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Any, Dict
+from typing import Literal, Any, Dict, Optional
 
 from app.application.citation_service import CitationService, DraftClaim, ValidatedClaim
 from app.application.router import Topic, route_topic
@@ -25,13 +25,30 @@ class BoundedAgent:
         self._citations = CitationService()
 
     @staticmethod
-    def _clean_claim(claim: Dict[str, Any]) -> Dict[str, Any]:
-        """پاکسازی کلیدهای ناخواسته از دیکشنری claim"""
+    def _clean_and_normalize_claim(claim: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        پاکسازی و نرمال‌سازی دیکشنری claim برای تطابق با DraftClaim
+        """
         cleaned = claim.copy()
-        # حذف کلیدهای مشکل‌دار (هر دو حالت)
-        cleaned.pop('exact evidence', None)  # با فاصله
-        cleaned.pop('exact_evidence', None)  # با آندرلاین
-        # در صورت نیاز، کلیدهای دیگری که باعث خطا می‌شوند را اینجا اضافه کنید
+        
+        # 1. حذف کلیدهای اضافی
+        cleaned.pop('exact evidence', None)
+        cleaned.pop('exact_evidence', None)
+        
+        # 2. نرمال‌سازی کلیدها (اگر کلیدها با نام‌های مختلف آمده‌اند)
+        # اگر 'evidence' وجود ندارد ولی 'exact_evidence' یا 'exact evidence' حذف شد،
+        # باید از کلید دیگری استفاده کنیم یا مقدار پیش‌فرض بدهیم
+        
+        # اگر 'evidence' وجود ندارد، از 'citation' یا 'source' استفاده کن
+        if 'evidence' not in cleaned:
+            if 'citation' in cleaned:
+                cleaned['evidence'] = cleaned['citation']
+            elif 'source' in cleaned:
+                cleaned['evidence'] = cleaned['source']
+            else:
+                # اگر هیچکدام نبود، یک مقدار پیش‌فرض بده
+                cleaned['evidence'] = "مدرکی یافت نشد"
+        
         return cleaned
 
     async def run(
@@ -69,9 +86,15 @@ class BoundedAgent:
             context=context,
         )
         
-        # پاکسازی claims قبل از ساخت DraftClaim
-        cleaned_claims = [self._clean_claim(claim) for claim in completion.claims]
-        drafts = [DraftClaim(**claim) for claim in cleaned_claims]
+        # پاکسازی و نرمال‌سازی claims
+        normalized_claims = [self._clean_and_normalize_claim(claim) for claim in completion.claims]
+        
+        # برای دیباگ: چاپ ساختار claims
+        print(f"=== Number of claims: {len(normalized_claims)} ===")
+        if normalized_claims:
+            print(f"First claim keys: {normalized_claims[0].keys()}")
+        
+        drafts = [DraftClaim(**claim) for claim in normalized_claims]
         
         cited = self._citations.validate(drafts, {chunk.chunk_id: chunk for chunk in chunks})
         if cited.status == "unknown":
