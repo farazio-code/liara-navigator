@@ -33,65 +33,31 @@ class BoundedAgent:
         self._provider = provider
         self._citations = CitationService()
 
-    @staticmethod
-    def _clean_and_normalize_claim(
-        claim: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        """
-        پاکسازی و نرمال‌سازی claim خروجی AI.
+@staticmethod
+def _clean_and_normalize_claim(
+    claim: Dict[str, Any],
+) -> Dict[str, Any]:
+    cleaned = dict(claim)
 
-        مدل ممکن است به جای evidence، یکی از این فیلدها
-        را برگرداند:
+    # Remove unsupported fields
+    cleaned.pop("exact evidence", None)
+    cleaned.pop("exact_evidence", None)
 
-            chunk_id
-            citation
-            source
-            evidence
+    # chunk_id -> evidence
+    if "evidence" not in cleaned and "chunk_id" in cleaned:
+        cleaned["evidence"] = cleaned["chunk_id"]
 
-        در نهایت DraftClaim باید evidence داشته باشد.
-        """
+    # Other possible aliases
+    if "evidence" not in cleaned and "citation" in cleaned:
+        cleaned["evidence"] = cleaned["citation"]
 
-        cleaned = dict(claim)
+    if "evidence" not in cleaned and "source" in cleaned:
+        cleaned["evidence"] = cleaned["source"]
 
-        # ---------------------------------------------------------
-        # حذف فیلدهای اضافی که DraftClaim انتظار ندارد
-        # ---------------------------------------------------------
+    # Remove chunk_id after converting it to evidence
+    cleaned.pop("chunk_id", None)
 
-        cleaned.pop("exact evidence", None)
-        cleaned.pop("exact_evidence", None)
-
-        # ---------------------------------------------------------
-        # تبدیل chunk_id به evidence
-        #
-        # طبق لاگ فعلی مدل این ساختار را برمی‌گرداند:
-        #
-        # {
-        #     "text": "...",
-        #     "role": "core",
-        #     "chunk_id": "UNTRUSTED_SERVICE_LOGS"
-        # }
-        #
-        # بنابراین:
-        #
-        # evidence = chunk_id
-        # ---------------------------------------------------------
-
-        if "evidence" not in cleaned:
-            if "chunk_id" in cleaned:
-                cleaned["evidence"] = cleaned["chunk_id"]
-
-            elif "citation" in cleaned:
-                cleaned["evidence"] = cleaned["citation"]
-
-            elif "source" in cleaned:
-                cleaned["evidence"] = cleaned["source"]
-
-        # DraftClaim باید evidence دریافت کند.
-        # chunk_id را بعد از تبدیل حذف می‌کنیم تا اگر DraftClaim
-        # آن را نمی‌شناسد باعث TypeError نشود.
-        cleaned.pop("chunk_id", None)
-
-        return cleaned
+    return cleaned
 
     @staticmethod
     def _has_valid_evidence(
