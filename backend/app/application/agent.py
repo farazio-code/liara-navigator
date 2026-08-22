@@ -38,40 +38,67 @@ class BoundedAgent:
         claim: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
-        پاکسازی و نرمال‌سازی claim خروجی مدل برای تطابق با DraftClaim.
+        پاکسازی و نرمال‌سازی claim خروجی AI.
 
-        هدف:
-        - حذف فیلدهای اضافی مثل exact_evidence
-        - تبدیل citation/source به evidence در صورت نیاز
-        - عدم ساخت evidence جعلی
+        مدل ممکن است به جای evidence، یکی از این فیلدها
+        را برگرداند:
+
+            chunk_id
+            citation
+            source
+            evidence
+
+        در نهایت DraftClaim باید evidence داشته باشد.
         """
 
         cleaned = dict(claim)
 
         # ---------------------------------------------------------
-        # 1. حذف فیلدهای اضافی که DraftClaim انتظار ندارد
+        # حذف فیلدهای اضافی که DraftClaim انتظار ندارد
         # ---------------------------------------------------------
+
         cleaned.pop("exact evidence", None)
         cleaned.pop("exact_evidence", None)
 
         # ---------------------------------------------------------
-        # 2. نرمال‌سازی evidence
+        # تبدیل chunk_id به evidence
+        #
+        # طبق لاگ فعلی مدل این ساختار را برمی‌گرداند:
+        #
+        # {
+        #     "text": "...",
+        #     "role": "core",
+        #     "chunk_id": "UNTRUSTED_SERVICE_LOGS"
+        # }
+        #
+        # بنابراین:
+        #
+        # evidence = chunk_id
         # ---------------------------------------------------------
+
         if "evidence" not in cleaned:
-            if "citation" in cleaned:
+            if "chunk_id" in cleaned:
+                cleaned["evidence"] = cleaned["chunk_id"]
+
+            elif "citation" in cleaned:
                 cleaned["evidence"] = cleaned["citation"]
 
             elif "source" in cleaned:
                 cleaned["evidence"] = cleaned["source"]
 
+        # DraftClaim باید evidence دریافت کند.
+        # chunk_id را بعد از تبدیل حذف می‌کنیم تا اگر DraftClaim
+        # آن را نمی‌شناسد باعث TypeError نشود.
+        cleaned.pop("chunk_id", None)
+
         return cleaned
 
     @staticmethod
-    def _has_valid_evidence(claim: Dict[str, Any]) -> bool:
+    def _has_valid_evidence(
+        claim: Dict[str, Any],
+    ) -> bool:
         """
-        بررسی می‌کند claim واقعاً evidence دارد یا خیر.
-
-        evidence خالی یا None معتبر نیست.
+        بررسی می‌کند claim دارای evidence معتبر باشد.
         """
 
         if "evidence" not in claim:
@@ -82,11 +109,11 @@ class BoundedAgent:
         if evidence is None:
             return False
 
-        if isinstance(evidence, str) and not evidence.strip():
-            return False
+        if isinstance(evidence, str):
+            return bool(evidence.strip())
 
-        if isinstance(evidence, (list, tuple, set)) and not evidence:
-            return False
+        if isinstance(evidence, (list, tuple, set)):
+            return bool(evidence)
 
         return True
 
@@ -146,7 +173,9 @@ class BoundedAgent:
             return AgentResult(
                 status="unknown",
                 claims=[],
-                message="پاسخ قابل اتکایی در منابع رسمی Liara پیدا نشد.",
+                message=(
+                    "پاسخ قابل اتکایی در منابع رسمی Liara پیدا نشد."
+                ),
                 model_calls=0,
                 read_chunks=0,
             )
@@ -166,7 +195,7 @@ class BoundedAgent:
         )
 
         # =========================================================
-        # 6. Build model context
+        # 6. Build AI context
         # =========================================================
 
         context = [
@@ -188,7 +217,7 @@ class BoundedAgent:
         )
 
         # =========================================================
-        # 8. Normalize claims
+        # 8. Normalize AI claims
         # =========================================================
 
         cleaned_claims: list[Dict[str, Any]] = []
@@ -196,8 +225,9 @@ class BoundedAgent:
         for index, claim in enumerate(completion.claims):
 
             try:
-                cleaned = self._clean_and_normalize_claim(claim)
-
+                cleaned = self._clean_and_normalize_claim(
+                    claim
+                )
             except Exception as exc:
                 print(
                     f"[AGENT] Failed to normalize claim #{index}: "
@@ -213,6 +243,11 @@ class BoundedAgent:
                 f"{list(cleaned.keys())}"
             )
 
+            print(
+                f"[AGENT] Claim #{index}: "
+                f"{cleaned!r}"
+            )
+
             # -----------------------------------------------------
             # Claim بدون evidence را وارد DraftClaim نکن
             # -----------------------------------------------------
@@ -221,9 +256,6 @@ class BoundedAgent:
                 print(
                     f"[AGENT] Skipping claim #{index}: "
                     f"missing evidence"
-                )
-                print(
-                    f"[AGENT] Claim content: {cleaned!r}"
                 )
                 continue
 
@@ -268,11 +300,13 @@ class BoundedAgent:
                 )
 
                 print(
-                    f"[AGENT] Claim keys: {list(claim.keys())}"
+                    f"[AGENT] Claim keys: "
+                    f"{list(claim.keys())}"
                 )
 
                 print(
-                    f"[AGENT] Claim value: {claim!r}"
+                    f"[AGENT] Claim value: "
+                    f"{claim!r}"
                 )
 
                 continue
@@ -294,7 +328,7 @@ class BoundedAgent:
             )
 
         # =========================================================
-        # 12. Citation validation
+        # 12. Validate citations
         # =========================================================
 
         cited = self._citations.validate(
