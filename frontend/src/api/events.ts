@@ -3,8 +3,8 @@ import { z } from "zod";
 const claimSchema = z.object({
   text: z.string(),
   role: z.enum(["core", "supporting"]),
-  chunk_id: z.string().min(1),
-  evidence: z.string().min(1),
+  chunk_id: z.string(),
+  evidence: z.string(),
 });
 
 export const terminalResultSchema = z.object({
@@ -17,44 +17,38 @@ export const terminalResultSchema = z.object({
 export type TerminalResult = z.infer<typeof terminalResultSchema>;
 
 export function parseTerminalEvent(stream: string): TerminalResult {
-  const blocks = stream
-    .trim()
-    .split(/\r?\n\r?\n/)
-    .filter(Boolean);
+  const blocks = stream.trim().split(/\r?\n\r?\n/);
 
   for (const block of blocks) {
     const lines = block.split(/\r?\n/);
 
-    const eventName = lines
-      .find((line) => line.startsWith("event:"))
-      ?.slice("event:".length)
-      .trim();
+    const eventLine = lines.find((line) =>
+      line.startsWith("event:"),
+    );
 
-    if (eventName !== "request.completed") {
+    if (eventLine?.trim() !== "event: request.completed") {
       continue;
     }
 
-    const dataLine = lines.find((line) => line.startsWith("data:"));
+    const dataLine = lines.find((line) =>
+      line.startsWith("data: "),
+    );
 
     if (!dataLine) {
       throw new Error("missing_terminal_data");
     }
 
-    const rawData = dataLine.slice("data:".length).trim();
+    const rawData = dataLine.slice("data: ".length);
 
-    if (!rawData) {
-      throw new Error("empty_terminal_data");
-    }
-
-    let payload: unknown;
+    let parsed: unknown;
 
     try {
-      payload = JSON.parse(rawData);
+      parsed = JSON.parse(rawData);
     } catch {
       throw new Error("invalid_terminal_json");
     }
 
-    return terminalResultSchema.parse(payload);
+    return terminalResultSchema.parse(parsed);
   }
 
   throw new Error("missing_terminal_event");
