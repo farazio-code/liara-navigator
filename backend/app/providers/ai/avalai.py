@@ -39,7 +39,7 @@ class AvalAIProvider:
                 model=self._model,
                 messages=[{"role": "user", "content": prompt}],
                 response_format={"type": "json_object"},
-                temperature=0,
+            
                 timeout=12,
             )
             content = response.choices[0].message.content
