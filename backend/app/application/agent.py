@@ -38,16 +38,15 @@ class BoundedAgent:
         claim: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
-        Normalize AI-generated claims into the structure expected
-        by DraftClaim.
+        Normalize AI-generated claims.
 
-        Supported evidence aliases:
-        - evidence
-        - chunk_id
-        - citation
-        - source
+        DraftClaim requires:
+            text
+            role
+            chunk_id
 
-        Unsupported exact-evidence fields are removed.
+        The AI may return evidence/citation/source instead of chunk_id,
+        so those aliases are normalized into chunk_id.
         """
 
         cleaned = dict(claim)
@@ -60,23 +59,27 @@ class BoundedAgent:
         cleaned.pop("exact_evidence", None)
 
         # ---------------------------------------------------------
-        # Normalize evidence
+        # Normalize evidence -> chunk_id
         # ---------------------------------------------------------
 
-        if "evidence" not in cleaned and "chunk_id" in cleaned:
-            cleaned["evidence"] = cleaned["chunk_id"]
+        if "chunk_id" not in cleaned:
 
-        if "evidence" not in cleaned and "citation" in cleaned:
-            cleaned["evidence"] = cleaned["citation"]
+            if "evidence" in cleaned:
+                cleaned["chunk_id"] = cleaned["evidence"]
 
-        if "evidence" not in cleaned and "source" in cleaned:
-            cleaned["evidence"] = cleaned["source"]
+            elif "citation" in cleaned:
+                cleaned["chunk_id"] = cleaned["citation"]
+
+            elif "source" in cleaned:
+                cleaned["chunk_id"] = cleaned["source"]
 
         # ---------------------------------------------------------
-        # chunk_id is no longer needed after normalization
+        # Keep chunk_id.
+        #
+        # IMPORTANT:
+        # DraftClaim requires chunk_id.
+        # Do NOT remove it here.
         # ---------------------------------------------------------
-
-        cleaned.pop("chunk_id", None)
 
         return cleaned
 
@@ -85,22 +88,19 @@ class BoundedAgent:
         claim: Dict[str, Any],
     ) -> bool:
         """
-        Check whether a normalized claim contains usable evidence.
+        Check whether the claim has a usable chunk_id.
         """
 
-        if "evidence" not in claim:
+        chunk_id = claim.get("chunk_id")
+
+        if chunk_id is None:
             return False
 
-        evidence = claim.get("evidence")
+        if isinstance(chunk_id, str):
+            return bool(chunk_id.strip())
 
-        if evidence is None:
-            return False
-
-        if isinstance(evidence, str):
-            return bool(evidence.strip())
-
-        if isinstance(evidence, (list, tuple, set)):
-            return bool(evidence)
+        if isinstance(chunk_id, (list, tuple, set)):
+            return bool(chunk_id)
 
         return True
 
@@ -238,7 +238,8 @@ class BoundedAgent:
                 )
 
                 print(
-                    f"[AGENT] Original claim: {claim!r}"
+                    f"[AGENT] Original claim: "
+                    f"{claim!r}"
                 )
 
                 continue
@@ -254,14 +255,14 @@ class BoundedAgent:
             )
 
             # -----------------------------------------------------
-            # Claim بدون evidence را وارد DraftClaim نکن
+            # Claim بدون chunk_id معتبر را رد کن
             # -----------------------------------------------------
 
             if not self._has_valid_evidence(cleaned):
 
                 print(
                     f"[AGENT] Skipping claim #{index}: "
-                    f"missing evidence"
+                    f"missing chunk_id/evidence"
                 )
 
                 continue
@@ -299,7 +300,6 @@ class BoundedAgent:
 
             try:
                 draft = DraftClaim(**claim)
-
                 drafts.append(draft)
 
             except TypeError as exc:
