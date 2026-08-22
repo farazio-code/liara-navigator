@@ -1,621 +1,166 @@
 openapi: 3.1.0
 info:
-  title: Liara Navigator Internal API
-  version: 1.0.0
+  title: Liara Navigator MVP API
+  version: 2.0.0
   description: >-
-    Same-origin API contract for the Liara Navigator MVP. The API never returns
-    a Liara token, upstream resource identifier, raw project response, or free-text
-    telemetry payload.
+    Same-origin API for the bounded Agentic and mock Support Ticket workflows.
+    No personal Liara token is accepted. Resource references are session-scoped,
+    logs are bounded and sanitized before model use, and ticket submission is mocked.
 servers:
   - url: /api/v1
-    description: Same-origin production API
-tags:
-  - name: Sessions
-  - name: Turns
-  - name: Project State
-  - name: Feedback
-  - name: Sources
-  - name: Health
-
 paths:
   /sessions:
     post:
-      tags: [Sessions]
       operationId: createAnonymousSession
-      summary: Create an anonymous session that can use Ask without a Liara token
-      security: []
       responses:
         '201':
-          description: Anonymous session created
-          headers:
-            Cache-Control:
-              schema: { type: string, const: no-store }
-            Set-Cookie:
-              schema: { type: string }
+          description: Anonymous session and memory-only CSRF token
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/CreateSessionResponse'
-        '429': { $ref: '#/components/responses/RateLimited' }
-
-  /sessions/connect:
-    post:
-      tags: [Sessions]
-      operationId: connectSession
-      summary: Validate a Liara token and upgrade the active anonymous session
-      security:
-        - sessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConnectSessionRequest'
-      responses:
-        '200':
-          description: Session upgraded and sanitized resource inventory returned
-          headers:
-            Cache-Control:
-              schema: { type: string, const: no-store }
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConnectSessionResponse'
-        '401': { $ref: '#/components/responses/AuthInvalid' }
-        '403': { $ref: '#/components/responses/CsrfInvalid' }
-        '429': { $ref: '#/components/responses/RateLimited' }
-        '502': { $ref: '#/components/responses/UpstreamUnavailable' }
-
-  /sessions/current:
-    delete:
-      tags: [Sessions]
-      operationId: disconnectSession
-      summary: Delete the active session and its token immediately
-      security:
-        - sessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      responses:
-        '204':
-          description: Session and token references deleted
-          headers:
-            Cache-Control:
-              schema: { type: string, const: no-store }
-        '401': { $ref: '#/components/responses/SessionInvalid' }
-        '403': { $ref: '#/components/responses/CsrfInvalid' }
-
-  /sessions/connection:
-    delete:
-      tags: [Sessions]
-      operationId: disconnectLiaraConnection
-      summary: Delete the Liara token and resources while preserving anonymous Ask
-      security:
-        - sessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      responses:
-        '204':
-          description: Token and resource bindings deleted; anonymous session remains active
-          headers:
-            Cache-Control:
-              schema: { type: string, const: no-store }
-        '401': { $ref: '#/components/responses/SessionInvalid' }
-        '403': { $ref: '#/components/responses/CsrfInvalid' }
-
-  /sessions/resources:
+              schema: { $ref: '#/components/schemas/SessionResponse' }
+  /fake-liara/platforms:
     get:
-      tags: [Sessions]
-      operationId: listSessionResources
-      summary: Return only sanitized resources associated with the active session
-      security:
-        - sessionCookie: []
+      operationId: listPlatforms
       responses:
         '200':
-          description: Sanitized resource inventory
-          headers:
-            Cache-Control:
-              schema: { type: string, const: no-store }
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: false
-                required: [resources]
-                properties:
-                  resources:
-                    type: array
-                    maxItems: 500
-                    items: { $ref: '#/components/schemas/ResourceSummary' }
-        '401': { $ref: '#/components/responses/SessionInvalid' }
-
+          description: Supported PaaS platforms
+  /fake-liara/apps:
+    get:
+      operationId: listApps
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema: { $ref: '#/components/schemas/Platform' }
+      responses:
+        '200':
+          description: Session-visible apps with opaque references
+  /fake-liara/apps/{app_ref}/services:
+    get:
+      operationId: listServices
+      parameters:
+        - $ref: '#/components/parameters/AppRef'
+      responses:
+        '200':
+          description: Services belonging to the selected app
+        '404': { $ref: '#/components/responses/ResourceNotAllowed' }
+  /fake-liara/services/{service_ref}/logs:
+    get:
+      operationId: getBoundedFixtureLogs
+      parameters:
+        - $ref: '#/components/parameters/ServiceRef'
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 100 }
+      responses:
+        '200':
+          description: Deterministic fixture logs; production agent sanitizes before model use
+        '404': { $ref: '#/components/responses/ResourceNotAllowed' }
   /turns/stream:
     post:
-      tags: [Turns]
-      operationId: streamTurn
-      summary: Execute one Ask, Guide, or Diagnose turn and stream typed events
-      security:
-        - sessionCookie: []
+      operationId: streamAgentTurn
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/TurnRequest'
+            schema: { $ref: '#/components/schemas/TurnRequest' }
       responses:
         '200':
-          description: >-
-            UTF-8 Server-Sent Events. Every event has an event name and JSON data
-            matching StreamEvent. A terminal request.completed event is required.
-          headers:
-            Cache-Control:
-              schema: { type: string, const: no-store }
-            X-Accel-Buffering:
-              schema: { type: string, const: 'no' }
+          description: Typed SSE ending in request.completed
           content:
             text/event-stream:
-              schema:
-                type: string
-                examples:
-                  - "event: request.accepted\ndata: {\"request_id\":\"0d61c...\"}\n\n"
-        '401': { $ref: '#/components/responses/SessionInvalid' }
+              schema: { type: string }
         '403': { $ref: '#/components/responses/CsrfInvalid' }
-        '409': { $ref: '#/components/responses/IdempotencyConflict' }
-        '422': { $ref: '#/components/responses/ValidationFailed' }
-        '429': { $ref: '#/components/responses/RateLimited' }
-
-  /project-state/refresh:
+        '409': { description: Idempotency key reused with different input }
+        '429': { description: Session turn budget exceeded }
+  /tickets:
     post:
-      tags: [Project State]
-      operationId: refreshProjectState
-      summary: Refresh a sanitized project state after explicit user action
-      description: >-
-        This endpoint does not rebuild the knowledge index. It resolves a
-        session-scoped resource_ref and performs only registered Liara GET tools.
-      security:
-        - sessionCookie: []
+      operationId: submitMockTicket
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [resource_ref]
-              properties:
-                resource_ref:
-                  $ref: '#/components/schemas/ResourceRef'
+            schema: { $ref: '#/components/schemas/TicketRequest' }
       responses:
-        '200':
-          description: Sanitized refreshed state
-          headers:
-            Cache-Control:
-              schema: { type: string, const: no-store }
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProjectStateResponse'
-        '401': { $ref: '#/components/responses/SessionInvalid' }
-        '403': { $ref: '#/components/responses/PolicyDenied' }
-        '404': { $ref: '#/components/responses/ResourceNotAllowed' }
-        '429': { $ref: '#/components/responses/RateLimited' }
-        '502': { $ref: '#/components/responses/UpstreamUnavailable' }
-
-  /feedback:
-    post:
-      tags: [Feedback]
-      operationId: submitFeedback
-      summary: Attach a bounded resolution or handoff outcome to a turn
-      security:
-        - sessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/CsrfToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FeedbackRequest'
-      responses:
-        '204':
-          description: Feedback stored; no free-text body accepted
-        '401': { $ref: '#/components/responses/SessionInvalid' }
+        '201':
+          description: Mock ticket accepted; nothing sent to real support
         '403': { $ref: '#/components/responses/CsrfInvalid' }
-        '404': { $ref: '#/components/responses/RequestNotFound' }
-        '422': { $ref: '#/components/responses/ValidationFailed' }
-
-  /sources/{chunk_id}:
-    get:
-      tags: [Sources]
-      operationId: getSourceChunk
-      summary: Return a public official-source preview from the active snapshot
-      security: []
-      parameters:
-        - name: chunk_id
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$'
-      responses:
-        '200':
-          description: Source preview and provenance
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceChunkResponse'
-        '404': { $ref: '#/components/responses/SourceNotFound' }
-
+        '422': { description: Invalid or secret-bearing content }
   /health/live:
     get:
-      tags: [Health]
       operationId: liveness
-      security: []
       responses:
-        '200':
-          description: Process event loop is alive
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/LivenessResponse' }
-
-  /health/ready:
-    get:
-      tags: [Health]
-      operationId: readiness
-      security: []
-      responses:
-        '200':
-          description: Configuration, knowledge snapshot, and database are ready
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ReadinessResponse' }
-        '503':
-          description: A local readiness dependency is unavailable
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ReadinessResponse' }
-
+        '200': { description: Process is alive }
 components:
-  securitySchemes:
-    sessionCookie:
-      type: apiKey
-      in: cookie
-      name: ln_session
-
   parameters:
     CsrfToken:
-      name: X-CSRF-Token
       in: header
+      name: X-CSRF-Token
       required: true
-      schema:
-        type: string
-        minLength: 32
-        maxLength: 256
-
+      schema: { type: string, minLength: 32, maxLength: 256 }
+    AppRef:
+      in: path
+      name: app_ref
+      required: true
+      schema: { type: string, minLength: 8, maxLength: 80 }
+    ServiceRef:
+      in: path
+      name: service_ref
+      required: true
+      schema: { type: string, minLength: 8, maxLength: 80 }
   schemas:
-    StreamEvent:
-      type: object
-      additionalProperties: false
-      required: [event, request_id, sequence, data]
-      properties:
-        event:
-          type: string
-          enum:
-            - request.accepted
-            - route.selected
-            - retrieval.progress
-            - tool.requested
-            - tool.result_summary
-            - answer.final
-            - answer.unknown
-            - request.failed
-            - request.completed
-        request_id: { type: string, format: uuid }
-        sequence: { type: integer, minimum: 1 }
-        data:
-          type: object
-          description: Event-specific sanitized payload; never contains a token or raw upstream response.
-
-    ConnectSessionRequest:
-      type: object
-      additionalProperties: false
-      required: [liara_token]
-      properties:
-        liara_token:
-          type: string
-          minLength: 16
-          maxLength: 4096
-          writeOnly: true
-
-    CreateSessionResponse:
+    Platform:
+      type: string
+      enum: [angular, django, docker, dotnet, flask, go, laravel, nextjs, nodejs, php, python, react, static, vue]
+    Topic:
+      type: string
+      enum: [paas, cdn, ssl, dns, other]
+    SessionResponse:
       type: object
       additionalProperties: false
       required: [session, csrf_token]
       properties:
-        session: { $ref: '#/components/schemas/SessionSummary' }
-        csrf_token:
-          type: string
-          minLength: 32
-          description: Stored only in frontend memory and required on state-changing calls.
-
-    ConnectSessionResponse:
-      type: object
-      additionalProperties: false
-      required: [session, csrf_token, resources]
-      properties:
-        session: { $ref: '#/components/schemas/SessionSummary' }
-        csrf_token:
-          type: string
-          minLength: 32
-          description: Stored only in frontend memory and required on state-changing calls.
-        resources:
-          type: array
-          maxItems: 500
-          items: { $ref: '#/components/schemas/ResourceSummary' }
-
-    SessionSummary:
-      type: object
-      additionalProperties: false
-      required: [status, connection_state, idle_expires_at, absolute_expires_at]
-      properties:
-        status: { type: string, const: active }
-        connection_state: { type: string, enum: [anonymous, connected] }
-        idle_expires_at: { type: string, format: date-time }
-        absolute_expires_at: { type: string, format: date-time }
-
-    ResourceRef:
-      type: string
-      pattern: '^res_[A-Za-z0-9_-]{22,128}$'
-
-    ResourceSummary:
-      type: object
-      additionalProperties: false
-      required: [resource_ref, family, display_label, status]
-      properties:
-        resource_ref: { $ref: '#/components/schemas/ResourceRef' }
-        family:
-          type: string
-          enum: [paas, domain, dns, database]
-        display_label:
-          type: string
-          minLength: 1
-          maxLength: 120
-        status:
-          type: string
-          maxLength: 48
-        capabilities:
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            enum: [inspect_summary, inspect_runtime, inspect_metrics, inspect_dns, inspect_ssl]
-
+        session: { type: object }
+        csrf_token: { type: string, minLength: 32, maxLength: 256 }
     TurnRequest:
       type: object
       additionalProperties: false
-      required: [message, requested_mode, resource_refs, client_turn_id]
+      required: [client_request_id, topic, message]
       properties:
-        message:
-          type: string
-          minLength: 1
-          maxLength: 4000
-        requested_mode:
-          type: string
-          enum: [auto, ask, guide, diagnose]
-        resource_refs:
-          type: array
-          maxItems: 5
-          uniqueItems: true
-          items: { $ref: '#/components/schemas/ResourceRef' }
-        client_turn_id:
-          type: string
-          format: uuid
-
-    FeedbackRequest:
+        client_request_id: { type: string, minLength: 8, maxLength: 64 }
+        topic: { $ref: '#/components/schemas/Topic' }
+        message: { type: string, minLength: 4, maxLength: 4000 }
+        service_ref: { type: [string, 'null'], minLength: 8, maxLength: 80 }
+    TicketRequest:
       type: object
       additionalProperties: false
-      required: [request_id, resolved, handoff_requested]
+      required: [topic, subject, description]
       properties:
-        request_id: { type: string, format: uuid }
-        resolved: { type: boolean }
-        handoff_requested:
-          type: boolean
-          description: Must be false when resolved is true.
-        reason:
-          type: string
-          enum: [solved, partially_solved, not_relevant, unclear, source_missing, tool_unavailable]
-      allOf:
-        - not:
-            properties:
-              resolved: { const: true }
-              handoff_requested: { const: true }
-            required: [resolved, handoff_requested]
-
-    ProjectStateResponse:
-      type: object
-      additionalProperties: false
-      required: [snapshot_id, resource_ref, family, captured_at, schema_version, facts]
-      properties:
-        snapshot_id: { type: string, format: uuid }
-        resource_ref: { $ref: '#/components/schemas/ResourceRef' }
-        family: { type: string, enum: [paas, domain, dns, database] }
-        captured_at: { type: string, format: date-time }
-        schema_version: { type: string, pattern: '^v[0-9]+$' }
-        facts:
-          oneOf:
-            - $ref: '#/components/schemas/PaasFacts'
-            - $ref: '#/components/schemas/DomainFacts'
-            - $ref: '#/components/schemas/DnsFacts'
-            - $ref: '#/components/schemas/DatabaseFacts'
-
-    PaasFacts:
-      type: object
-      additionalProperties: false
-      required: [kind, status, is_deployed]
-      properties:
-        kind: { type: string, const: paas }
-        status: { type: string, maxLength: 48 }
-        is_deployed: { type: boolean }
-        platform: { type: string, maxLength: 48 }
-        release_state: { type: [string, 'null'], maxLength: 48 }
-        release_created_at: { type: [string, 'null'], format: date-time }
-        applet_state: { type: [string, 'null'], maxLength: 48 }
-        applet_reason: { type: [string, 'null'], maxLength: 240 }
-        metrics: { $ref: '#/components/schemas/MetricSummary' }
-
-    DomainFacts:
-      type: object
-      additionalProperties: false
-      required: [kind, status, ssl_status]
-      properties:
-        kind: { type: string, const: domain }
-        status: { type: string, maxLength: 48 }
-        ssl_status: { type: string, maxLength: 48 }
-        mapping_status: { type: [string, 'null'], maxLength: 48 }
-
-    DnsFacts:
-      type: object
-      additionalProperties: false
-      required: [kind, nameserver_status, records]
-      properties:
-        kind: { type: string, const: dns }
-        nameserver_status: { type: string, maxLength: 48 }
-        records:
-          type: array
-          maxItems: 100
-          items:
-            type: object
-            additionalProperties: false
-            required: [type, name, value]
-            properties:
-              type: { type: string, enum: [A, AAAA, CNAME, MX, TXT] }
-              name: { type: string, maxLength: 253 }
-              value: { type: string, maxLength: 1024 }
-
-    DatabaseFacts:
-      type: object
-      additionalProperties: false
-      required: [kind, database_type, status, public_network]
-      properties:
-        kind: { type: string, const: database }
-        database_type: { type: string, maxLength: 48 }
-        version: { type: [string, 'null'], maxLength: 48 }
-        status: { type: string, maxLength: 48 }
-        public_network: { type: boolean }
-        metrics: { $ref: '#/components/schemas/MetricSummary' }
-
-    MetricSummary:
-      type: [object, 'null']
-      additionalProperties: false
-      properties:
-        cpu_percent: { type: [number, 'null'], minimum: 0 }
-        memory_percent: { type: [number, 'null'], minimum: 0 }
-        network_receive_bytes: { type: [integer, 'null'], minimum: 0 }
-        network_transmit_bytes: { type: [integer, 'null'], minimum: 0 }
-        window_start: { type: [string, 'null'], format: date-time }
-        window_end: { type: [string, 'null'], format: date-time }
-
-    SourceChunkResponse:
-      type: object
-      additionalProperties: false
-      required: [chunk_id, title, heading_path, evidence_preview, source_url, snapshot_version]
-      properties:
-        chunk_id: { type: string }
-        title: { type: string, maxLength: 240 }
-        heading_path:
-          type: array
-          items: { type: string, maxLength: 240 }
-        evidence_preview: { type: string, maxLength: 2000 }
-        source_url: { type: string, format: uri }
-        snapshot_version: { type: string }
-
-    LivenessResponse:
-      type: object
-      additionalProperties: false
-      required: [status]
-      properties:
-        status: { type: string, const: alive }
-
-    ReadinessResponse:
-      type: object
-      additionalProperties: false
-      required: [status, snapshot, database, retention]
-      properties:
-        status: { type: string, enum: [ready, not_ready] }
-        snapshot: { type: string, enum: [ready, failed] }
-        database: { type: string, enum: [ready, failed] }
-        retention: { type: string, enum: [healthy, stale, unknown] }
-        snapshot_version: { type: [string, 'null'] }
-
+        topic: { $ref: '#/components/schemas/Topic' }
+        subject: { type: string, minLength: 10, maxLength: 120 }
+        description: { type: string, minLength: 20, maxLength: 2000 }
+        handoff_summary: { type: [string, 'null'], maxLength: 1500 }
     ErrorResponse:
       type: object
       additionalProperties: false
       required: [code, message, request_id, retryable]
       properties:
-        code:
-          type: string
-          enum:
-            - AUTH_INVALID
-            - AUTH_RATE_LIMITED
-            - SESSION_INVALID
-            - CSRF_INVALID
-            - LIARA_TIMEOUT
-            - LIARA_UNAVAILABLE
-            - POLICY_DENIED
-            - RESOURCE_NOT_ALLOWED
-            - AI_TIMEOUT
-            - AI_RATE_LIMITED
-            - AI_INVALID_OUTPUT
-            - RETRIEVAL_EMPTY
-            - CITATION_CORE_FAILED
-            - SNAPSHOT_INCOMPATIBLE
-            - IDEMPOTENCY_CONFLICT
-            - VALIDATION_FAILED
-            - REQUEST_NOT_FOUND
-            - SOURCE_NOT_FOUND
-            - INTERNAL_ERROR
+        code: { type: string }
         message: { type: string, maxLength: 240 }
         request_id: { type: string, format: uuid }
         retryable: { type: boolean }
-
   responses:
-    AuthInvalid:
-      description: Liara token invalid
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
-    SessionInvalid:
-      description: Session missing or expired
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
     CsrfInvalid:
-      description: CSRF token missing or invalid
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
-    RateLimited:
-      description: Request rejected before external provider use
-      headers:
-        Retry-After: { schema: { type: integer, minimum: 1 } }
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
-    UpstreamUnavailable:
-      description: Liara or AI upstream unavailable
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
-    PolicyDenied:
-      description: Tool policy denied execution
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+      description: CSRF validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
     ResourceNotAllowed:
-      description: Resource reference absent from current session inventory
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
-    IdempotencyConflict:
-      description: client_turn_id was reused with a different payload
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
-    ValidationFailed:
-      description: Strict request schema validation failed
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
-    RequestNotFound:
-      description: Feedback request_id does not belong to current session
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
-    SourceNotFound:
-      description: Chunk is absent from active knowledge snapshot
-      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+      description: Reference is missing, wrong-kind, or belongs to another session
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }

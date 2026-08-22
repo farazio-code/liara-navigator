@@ -1,0 +1,70 @@
+{
+  "platforms": [
+    {"id": "angular", "label": "Angular"},
+    {"id": "django", "label": "Django"},
+    {"id": "docker", "label": "Docker"},
+    {"id": "dotnet", "label": ".NET"},
+    {"id": "flask", "label": "Flask"},
+    {"id": "go", "label": "Go"},
+    {"id": "laravel", "label": "Laravel"},
+    {"id": "nextjs", "label": "Next.js"},
+    {"id": "nodejs", "label": "Node.js"},
+    {"id": "php", "label": "PHP"},
+    {"id": "python", "label": "Python"},
+    {"id": "react", "label": "React"},
+    {"id": "static", "label": "Static"},
+    {"id": "vue", "label": "Vue"}
+  ],
+  "users": {
+    "demo-user": {
+      "apps": [
+        {
+          "id": "app_storefront_internal",
+          "name": "فروشگاه",
+          "platform": "django",
+          "status": "running",
+          "services": [
+            {
+              "id": "svc_storefront_web_internal",
+              "name": "web",
+              "kind": "web",
+              "status": "healthy",
+              "logs": [
+                {"timestamp": "2026-08-21T18:41:02Z", "stream": "stdout", "message": "Booting worker with pid 12"},
+                {"timestamp": "2026-08-21T18:41:04Z", "stream": "stdout", "message": "Listening on 0.0.0.0:8080"},
+                {"timestamp": "2026-08-21T18:42:10Z", "stream": "stderr", "message": "Database connection timed out after 5s"},
+                {"timestamp": "2026-08-21T18:42:15Z", "stream": "stderr", "message": "Retrying database connection"}
+              ]
+            },
+            {
+              "id": "svc_storefront_worker_internal",
+              "name": "worker",
+              "kind": "worker",
+              "status": "degraded",
+              "logs": [
+                {"timestamp": "2026-08-21T18:40:00Z", "stream": "stderr", "message": "Queue consumer reconnecting"}
+              ]
+            }
+          ]
+        },
+        {
+          "id": "app_catalog_internal",
+          "name": "کاتالوگ API",
+          "platform": "dotnet",
+          "status": "running",
+          "services": [
+            {
+              "id": "svc_catalog_api_internal",
+              "name": "api",
+              "kind": "web",
+              "status": "healthy",
+              "logs": [
+                {"timestamp": "2026-08-21T18:45:00Z", "stream": "stdout", "message": "Application started"}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

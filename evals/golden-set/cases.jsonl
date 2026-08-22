@@ -1,0 +1,5 @@
+{"id":"dns-connect","topic":"dns","question":"دامنه من به برنامه متصل نمی‌شود","expected":"answer","expected_chunk":"dns-records"}
+{"id":"ssl-issue","topic":"ssl","question":"برای دامنه گواهی SSL صادر نمی‌شود","expected":"answer","expected_chunk":"ssl-certificate"}
+{"id":"cdn-stale","topic":"cdn","question":"بعد از تغییر فایل استاتیک نسخه قدیمی دیده می‌شود","expected":"answer","expected_chunk":"cdn-cache"}
+{"id":"paas-db-timeout","topic":"paas","question":"اتصال دیتابیس timeout می‌شود","expected":"answer","expected_chunk":"paas-database-connection"}
+{"id":"unknown-error","topic":"cdn","question":"خطای ناشناخته ZXQ-991 چیست؟","expected":"unknown","expected_chunk":null}
