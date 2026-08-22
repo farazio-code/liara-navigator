@@ -27,15 +27,10 @@ class BoundedAgent:
     @staticmethod
     def _clean_claim(claim: Dict[str, Any]) -> Dict[str, Any]:
         """پاکسازی کلیدهای ناخواسته از دیکشنری claim"""
-        # کلیدهای معتبر برای DraftClaim را مشخص کنید
-        # این لیست را بر اساس فیلدهای واقعی کلاس DraftClaim خود تنظیم کنید
-        valid_keys = {
-            'claim_id', 'text', 'verdict', 'evidence', 
-            'confidence', 'source', 'citation', 'status'
-        }
-        
-        # فقط کلیدهای معتبر را نگه می‌داریم
-        cleaned = {key: claim[key] for key in valid_keys if key in claim}
+        # روش ساده‌تر: فقط کلید 'exact evidence' را حذف می‌کنیم
+        # و بقیه کلیدها را intact نگه می‌داریم
+        cleaned = claim.copy()
+        cleaned.pop('exact evidence', None)  # حذف کلید مشکل‌دار
         return cleaned
 
     async def run(
@@ -73,7 +68,7 @@ class BoundedAgent:
             context=context,
         )
         
-        # ✅ اصلاح: پاکسازی claims قبل از ساخت DraftClaim
+        # ✅ اصلاح: فقط کلید 'exact evidence' را حذف می‌کنیم
         cleaned_claims = [self._clean_claim(claim) for claim in completion.claims]
         drafts = [DraftClaim(**claim) for claim in cleaned_claims]
         
