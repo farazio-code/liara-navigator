@@ -429,21 +429,46 @@ export function App() {
                 {turnState === "error" && <p className="status error">ارتباط با دستیار ناموفق بود؛ متن شما حفظ شده است.</p>}
               </div>
             </form>
-
             {result && (
               <section className={`agent-result ${result.status}`} aria-label="پاسخ دستیار">
-                <h2 className="section-title">{result.status === "answer" ? "پاسخ مستند" : result.status === "clarification" ? "جزئیات بیشتری لازم است" : "پاسخ قطعی پیدا نشد"}</h2>
+                <h2 className="section-title">
+                  {result.status === "answer"
+                    ? "پاسخ مستند"
+                    : result.status === "clarification"
+                      ? "جزئیات بیشتری لازم است"
+                      : "پاسخ قطعی پیدا نشد"}
+                </h2>
+            
                 {result.message && <p>{result.message}</p>}
+            
                 {result.claims.map((claim) => (
-                  <article className="claim" key={`${claim.citation.chunk_id}-${claim.text}`}>
+                  <article
+                    className="claim"
+                    key={`${claim.chunk_id}-${claim.text}`}
+                  >
                     <p>{claim.text}</p>
-                    <a href={claim.citation.url} target="_blank" rel="noreferrer">[{claim.citation.title} — {claim.citation.heading}]</a>
-                    <blockquote>{claim.citation.evidence}</blockquote>
+            
+                    <div className="claim-source">
+                      <span className="source-label">
+                        منبع رسمی Liara
+                      </span>
+            
+                      <span className="source-id">
+                        {claim.chunk_id}
+                      </span>
+                    </div>
+            
+                    <blockquote>{claim.evidence}</blockquote>
                   </article>
                 ))}
-                <button className="retry" onClick={handoffToTicket}>ادامه با تیکت پشتیبانی</button>
-              </section>
-            )}
+
+    {result.status !== "answer" || result.claims.length === 0 ? null : (
+      <button className="retry" onClick={handoffToTicket}>
+        ادامه با تیکت پشتیبانی
+      </button>
+    )}
+  </section>
+)}
           </section>
         )}
       </main>
