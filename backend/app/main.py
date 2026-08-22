@@ -20,6 +20,7 @@ from app.providers.ai.base import AIProvider
 from app.providers.ai.fixture import FixtureAIProvider
 from app.providers.fake_liara.client import FakeLiaraClient
 from app.retrieval.knowledge_store import KnowledgeStore
+from app.retrieval.snapshot_loader import validate_snapshot
 from app.security.rate_limit import MemoryRateLimiter
 from app.security.session_vault import MemorySessionVault
 from app.telemetry.store import MemoryTelemetryStore
@@ -45,13 +46,14 @@ def create_app(
         application.state.fake_liara = FakeLiaraClient()
         application.state.telemetry = MemoryTelemetryStore()
         application.state.rate_limiter = MemoryRateLimiter()
-        snapshot_path = (
+        snapshot_directory = (
             Path(__file__).resolve().parents[2]
             / "knowledge"
             / "snapshots"
             / resolved_settings.KNOWLEDGE_SNAPSHOT_VERSION
-            / "chunks.jsonl"
         )
+        validate_snapshot(snapshot_directory)
+        snapshot_path = snapshot_directory / "chunks.jsonl"
         provider = ai_provider
         if provider is None:
             provider = (

@@ -41,3 +41,23 @@ def test_settings_accept_safe_explicit_values() -> None:
     assert settings.APP_ENV == "test"
     assert settings.AI_BASE_URL.unicode_string() == "https://api.avalai.ir/v1"
     assert settings.AVALAI_API_KEY.get_secret_value() == VALID_ENV["AVALAI_API_KEY"]
+
+
+def test_settings_reject_fixture_snapshot_in_production() -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, **(VALID_ENV | {"APP_ENV": "production"}))
+
+
+def test_settings_accept_versioned_snapshot_in_production() -> None:
+    settings = Settings(
+        _env_file=None,
+        **(
+            VALID_ENV
+            | {
+                "APP_ENV": "production",
+                "KNOWLEDGE_SNAPSHOT_VERSION": "liara-docs-dbb7430b1abc",
+            }
+        ),
+    )
+
+    assert settings.KNOWLEDGE_SNAPSHOT_VERSION == "liara-docs-dbb7430b1abc"

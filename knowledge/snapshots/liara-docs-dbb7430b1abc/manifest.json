@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "version": "liara-docs-dbb7430b1abc",
+  "chunk_count": 3155,
+  "chunks_sha256": "e9e2281de42e2e06900bbadca21cfb585b27edf64f091bbec2c54f697561d4cd",
+  "source_repository": "https://github.com/liara-cloud/docs",
+  "source_commit": "dbb7430b1abc5bf92ccca3538f45c54bdc632fa8",
+  "created_at": "2026-08-22T03:34:41.761027+00:00",
+  "topic_counts": {
+    "cdn": 3,
+    "dns": 32,
+    "other": 2174,
+    "paas": 941,
+    "ssl": 5
+  }
+}

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import Field, HttpUrl, SecretStr, field_validator
+from pydantic import Field, HttpUrl, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -45,3 +45,9 @@ class Settings(BaseSettings):
         if value.scheme != "https":
             raise ValueError("AI_BASE_URL must use HTTPS")
         return value
+
+    @model_validator(mode="after")
+    def reject_test_snapshot_in_production(self) -> Settings:
+        if self.APP_ENV == "production" and self.KNOWLEDGE_SNAPSHOT_VERSION == "test-fixture":
+            raise ValueError("production must use a versioned official knowledge snapshot")
+        return self
