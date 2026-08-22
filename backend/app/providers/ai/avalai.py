@@ -57,3 +57,4 @@ class AvalAIProvider:
             raise AppError(ErrorCode.AI_RATE_LIMITED) from error
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
             raise AppError(ErrorCode.AI_INVALID_OUTPUT) from error
+            
