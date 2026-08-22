@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Any, Dict
 
 from app.application.citation_service import CitationService, DraftClaim, ValidatedClaim
 from app.application.router import Topic, route_topic
@@ -23,6 +23,20 @@ class BoundedAgent:
         self._store = store
         self._provider = provider
         self._citations = CitationService()
+
+    @staticmethod
+    def _clean_claim(claim: Dict[str, Any]) -> Dict[str, Any]:
+        """پاکسازی کلیدهای ناخواسته از دیکشنری claim"""
+        # کلیدهای معتبر برای DraftClaim را مشخص کنید
+        # این لیست را بر اساس فیلدهای واقعی کلاس DraftClaim خود تنظیم کنید
+        valid_keys = {
+            'claim_id', 'text', 'verdict', 'evidence', 
+            'confidence', 'source', 'citation', 'status'
+        }
+        
+        # فقط کلیدهای معتبر را نگه می‌داریم
+        cleaned = {key: claim[key] for key in valid_keys if key in claim}
+        return cleaned
 
     async def run(
         self, *, topic: Topic, message: str, runtime_evidence: str | None = None
@@ -58,7 +72,11 @@ class BoundedAgent:
             topic=topic,
             context=context,
         )
-        drafts = [DraftClaim(**claim) for claim in completion.claims]
+        
+        # ✅ اصلاح: پاکسازی claims قبل از ساخت DraftClaim
+        cleaned_claims = [self._clean_claim(claim) for claim in completion.claims]
+        drafts = [DraftClaim(**claim) for claim in cleaned_claims]
+        
         cited = self._citations.validate(drafts, {chunk.chunk_id: chunk for chunk in chunks})
         if cited.status == "unknown":
             return AgentResult(
