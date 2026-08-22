@@ -1,7 +1,8 @@
 {
   "port": 8000,
+  "team-id": "6a86b2b3cb65108a1801b546",
   "build": {
-    "dockerfile": "./Dockerfile",
-    "cache": true
-  }
+    "location": "germany"
+  },
+  "disks": []
 }
