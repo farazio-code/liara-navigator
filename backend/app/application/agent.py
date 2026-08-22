@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Literal
+from typing import Literal, Any, Dict
 
 from app.application.citation_service import (
     CitationService,
@@ -23,6 +23,7 @@ class AgentResult:
 
 
 class BoundedAgent:
+
     def __init__(
         self,
         *,
@@ -38,15 +39,20 @@ class BoundedAgent:
         claim: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
-        Normalize AI-generated claims.
+        Normalize AI-generated claims into the exact structure
+        required by DraftClaim.
 
         DraftClaim requires:
-            text
-            role
-            chunk_id
+            - text
+            - role
+            - chunk_id
+            - evidence
 
-        The AI may return evidence/citation/source instead of chunk_id,
-        so those aliases are normalized into chunk_id.
+        The model may return either:
+            chunk_id
+            evidence
+            citation
+            source
         """
 
         cleaned = dict(claim)
@@ -59,27 +65,55 @@ class BoundedAgent:
         cleaned.pop("exact_evidence", None)
 
         # ---------------------------------------------------------
-        # Normalize evidence -> chunk_id
+        # Resolve evidence
         # ---------------------------------------------------------
 
-        if "chunk_id" not in cleaned:
+        evidence = cleaned.get("evidence")
 
-            if "evidence" in cleaned:
-                cleaned["chunk_id"] = cleaned["evidence"]
+        if not evidence:
+            evidence = cleaned.get("citation")
 
-            elif "citation" in cleaned:
-                cleaned["chunk_id"] = cleaned["citation"]
+        if not evidence:
+            evidence = cleaned.get("source")
 
-            elif "source" in cleaned:
-                cleaned["chunk_id"] = cleaned["source"]
+        if not evidence:
+            evidence = cleaned.get("chunk_id")
 
         # ---------------------------------------------------------
-        # Keep chunk_id.
+        # Resolve chunk_id
+        # ---------------------------------------------------------
+
+        chunk_id = cleaned.get("chunk_id")
+
+        if not chunk_id:
+            chunk_id = cleaned.get("evidence")
+
+        if not chunk_id:
+            chunk_id = cleaned.get("citation")
+
+        if not chunk_id:
+            chunk_id = cleaned.get("source")
+
+        # ---------------------------------------------------------
+        # Normalize both fields
         #
         # IMPORTANT:
-        # DraftClaim requires chunk_id.
-        # Do NOT remove it here.
+        # Do NOT remove either field.
+        # DraftClaim requires both.
         # ---------------------------------------------------------
+
+        if evidence is not None:
+            cleaned["evidence"] = evidence
+
+        if chunk_id is not None:
+            cleaned["chunk_id"] = chunk_id
+
+        # ---------------------------------------------------------
+        # Remove unsupported aliases
+        # ---------------------------------------------------------
+
+        cleaned.pop("citation", None)
+        cleaned.pop("source", None)
 
         return cleaned
 
@@ -88,7 +122,28 @@ class BoundedAgent:
         claim: Dict[str, Any],
     ) -> bool:
         """
-        Check whether the claim has a usable chunk_id.
+        Check that the claim contains usable evidence.
+        """
+
+        evidence = claim.get("evidence")
+
+        if evidence is None:
+            return False
+
+        if isinstance(evidence, str):
+            return bool(evidence.strip())
+
+        if isinstance(evidence, (list, tuple, set)):
+            return bool(evidence)
+
+        return True
+
+    @staticmethod
+    def _has_valid_chunk_id(
+        claim: Dict[str, Any],
+    ) -> bool:
+        """
+        Check that the claim contains a usable chunk_id.
         """
 
         chunk_id = claim.get("chunk_id")
@@ -98,9 +153,6 @@ class BoundedAgent:
 
         if isinstance(chunk_id, str):
             return bool(chunk_id.strip())
-
-        if isinstance(chunk_id, (list, tuple, set)):
-            return bool(chunk_id)
 
         return True
 
@@ -181,18 +233,6 @@ class BoundedAgent:
             budget=budget,
         )
 
-        if not chunks:
-            return AgentResult(
-                status="unknown",
-                claims=[],
-                message=(
-                    "منابع مرتبط پیدا شدند، اما محتوای قابل استفاده "
-                    "برای پاسخ در دسترس نبود."
-                ),
-                model_calls=0,
-                read_chunks=0,
-            )
-
         # =========================================================
         # 6. Build AI context
         # =========================================================
@@ -203,10 +243,7 @@ class BoundedAgent:
         ]
 
         if runtime_evidence:
-            context.append(
-                "RUNTIME EVIDENCE:\n"
-                + runtime_evidence[:4000]
-            )
+            context.append(runtime_evidence)
 
         # =========================================================
         # 7. Call AI provider
@@ -236,12 +273,9 @@ class BoundedAgent:
                     f"[AGENT] Failed to normalize claim #{index}: "
                     f"{exc!r}"
                 )
-
                 print(
-                    f"[AGENT] Original claim: "
-                    f"{claim!r}"
+                    f"[AGENT] Original claim: {claim!r}"
                 )
-
                 continue
 
             print(
@@ -255,16 +289,25 @@ class BoundedAgent:
             )
 
             # -----------------------------------------------------
-            # Claim بدون chunk_id معتبر را رد کن
+            # Evidence validation
             # -----------------------------------------------------
 
             if not self._has_valid_evidence(cleaned):
-
                 print(
                     f"[AGENT] Skipping claim #{index}: "
-                    f"missing chunk_id/evidence"
+                    f"missing evidence"
                 )
+                continue
 
+            # -----------------------------------------------------
+            # chunk_id validation
+            # -----------------------------------------------------
+
+            if not self._has_valid_chunk_id(cleaned):
+                print(
+                    f"[AGENT] Skipping claim #{index}: "
+                    f"missing chunk_id"
+                )
                 continue
 
             cleaned_claims.append(cleaned)
@@ -274,17 +317,17 @@ class BoundedAgent:
         # =========================================================
 
         if not cleaned_claims:
-
             print(
-                "[AGENT] No claims with valid evidence were produced."
+                "[AGENT] No claims with valid evidence/chunk_id "
+                "were produced."
             )
 
             return AgentResult(
                 status="unknown",
                 claims=[],
                 message=(
-                    "پاسخ تولیدشده فاقد evidence معتبر برای استناد "
-                    "به منابع رسمی بود."
+                    "پاسخ تولیدشده فاقد evidence معتبر برای "
+                    "استناد به منابع رسمی بود."
                 ),
                 model_calls=1,
                 read_chunks=len(chunks),
@@ -299,10 +342,16 @@ class BoundedAgent:
         for index, claim in enumerate(cleaned_claims):
 
             try:
-                draft = DraftClaim(**claim)
+                draft = DraftClaim(
+                    text=claim["text"],
+                    role=claim["role"],
+                    chunk_id=claim["chunk_id"],
+                    evidence=claim["evidence"],
+                )
+
                 drafts.append(draft)
 
-            except TypeError as exc:
+            except (TypeError, KeyError) as exc:
 
                 print(
                     f"[AGENT] Failed to create DraftClaim "
@@ -326,7 +375,6 @@ class BoundedAgent:
         # =========================================================
 
         if not drafts:
-
             return AgentResult(
                 status="unknown",
                 claims=[],
@@ -355,7 +403,6 @@ class BoundedAgent:
         # =========================================================
 
         if cited.status == "unknown":
-
             return AgentResult(
                 status="unknown",
                 claims=[],
